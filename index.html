@@ -1,0 +1,307 @@
+<!doctype html>
+<html>
+    <head>
+        <script src="https://aframe.io/releases/1.0.4/aframe.min.js"></script>
+        <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+        <script src="https://raw.githack.com/donmccurdy/aframe-extras/master/dist/aframe-extras.loaders.min.js"></script>
+        <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-detector.js"></script>
+        <script src="https://raw.githack.com/AR-js-org/studio-backend/master/src/modules/marker/tools/gesture-handler.js"></script>
+        <style>
+            #startButton {
+                position: fixed;
+                top: 50%;   /* 設置為視窗高度的 50% */
+                left: 50%;  /* 設置為視窗寬度的 50% */
+                transform: translate(-50%, -50%); /* 使用 transform 來正確對齊到中心 */
+                z-index: 100;
+            }
+            #rules {
+                display: none;
+                position: fixed; /* 或 absolute 依據需要 */
+                bottom: 10px; /* 您可以調整位置 */
+                left: 10px; /* 您可以調整位置 */
+                width: 300px; /* 您可以調整大小 */
+                background-color: rgba(255, 255, 255, 0.8); /* 半透明白色背景 */
+                border: 1px solid #ddd; /* 灰色邊框 */
+                padding: 10px;
+                border-radius: 5px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 輕微的陰影 */
+                z-index: 100; /* 確保它在其他元素之上 */
+                overflow: auto; /* 添加滾動條 */
+                max-height: 200px; /* 最大高度，防止 div 過大 */
+            }
+            #readyButton {
+            /* 可以複製 #breathButton 的樣式，並根據需要進行調整 */
+            position: fixed;
+            top: 40%;  /* 調整位置 */
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 100;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+            #breathButton {
+                position: fixed;
+                bottom: 5%; /* 設置在底部，留有一些空間 */
+                left: 50%;
+                transform: translateX(-50%);
+                z-index: 100;
+                padding: 10px;
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+            }
+
+            /* 分數顯示框的樣式 */
+           #scoreBoard {
+            display: none;
+            position: fixed;
+            top: 70%;   /* 或其他希望放置的位置 */
+            left: 50%;  /* 或其他希望放置的位置 */
+            transform: translate(-50%, -50%);
+            z-index: 100;
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        #learnMoreButton, #meditationInfo {
+            position: fixed;
+            top: 80%;  /* 或其他希望放置的位置 */
+            left: 50%; /* 或其他希望放置的位置 */
+            transform: translate(-50%, -50%);
+            z-index: 100;
+            background-color: white;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+    #listenAgainButton {
+        /* 可以複製 #breathButton 的樣式，並根據需要進行調整 */
+        position: fixed;
+        bottom: 10%; /* 設置在底部，留有一些空間 */
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 100;
+        padding: 10px;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    #meditationInfo {
+    background-color: lightgrey;
+    width: 80%; /* 將寬度設為螢幕寬度的 80% */
+    max-width: 600px; /* 最大寬度限制 */
+    padding: 20px;
+    border-radius: 10px;
+    text-align: justify; /* 或者 text-align: left; */
+    box-shadow: 2px 2px 10px rgba(0,0,0,0.5); /* 加深陰影，增加立體感 */
+    overflow-y: auto; /* 如果內容過多，允許垂直滾動 */
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 100;
+}
+        </style>
+    </head>
+
+    <body style="margin: 0; overflow: hidden;">
+        <button id="startButton">Start</button>
+        <div id="rules">Game Description: A breath is composed of an inhale and an exhale. 
+            Count when you exhale and press the button on the screen. 
+            Try to follow the pace that we’ve demonstrated. 
+            Notice that even though everyone can have different paces, you will be given a score for reference!</div>
+        <button id="readyButton" style="display: none;">Ready?</button>
+        <!-- 添加 breath 按鈕和分數顯示框 -->
+        <button id="breathButton" style="display: none;">Breath</button>
+        <button id="listenAgainButton" style="display: none;">Listen Again</button>
+
+        <div id="scoreBoard" style="display: none;">
+            <p>Score: <span id="totalScore"></span>/100</p>
+            <p>Too fast score: - <span id="fastScore"></span></p>
+            <p>Too slow score: - <span id="slowScore"></span></p>
+            <p>Total Time: <span id="totalTime"></span> seconds</p>
+        </div>
+        <button id="learnMoreButton" style="display: none;">Learn More</button>
+
+        <div id="meditationInfo" style="display: none;">
+    <p>Breathing counting, also known as "breath count meditation," is an effective mindfulness practice that focuses on the breath. It helps in maintaining focus on breathing and wards off distracting thoughts, making it a practical way to enhance concentration and mindfulness.</p>
+    <p><strong>Principle:</strong> Master Sheng Yen stated that people are easily distracted. When we try to clear our minds, we either drift to other thoughts or fall asleep. Engaging in a simple task like counting assists in focusing on the breath. But why focus on breathing? Modern science tells us that when the 'fight or flight' response is triggered, energy is directed to our muscles, and the brain is deprived of its power to think.</p>
+    <p>This mechanism was originally meant to escape predators in the wild, but in modern times, it serves no purpose and actually prevents clear thinking. With continuous practice, we can learn to calm down amidst the surge of adrenaline caused by the 'fight or flight' response. Observing our breath in a meditative state can 'unlock' the brain, which is also a key training component for top athletes.</p>
+</div>
+
+        <a-scene
+            vr-mode-ui="enabled: false;"
+            loading-screen="enabled: false;"
+            renderer="logarithmicDepthBuffer: true;"
+            arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
+            id="scene"
+            embedded
+            gesture-detector
+        >
+            <a-assets>
+                <a-asset-item
+                    id="animated-asset"
+                    src="assets/asset.gltf"
+                ></a-asset-item>
+            </a-assets>
+
+            <a-marker
+                id="animated-marker"
+                type="pattern"
+                preset="hiro"
+                url="assets/marker.patt"
+                raycaster="objects: .clickable"
+                emitevents="true"
+                cursor="fuse: false; rayOrigin: mouse;"
+            >
+                <a-entity
+                    id="bowser-model"
+                    scale="1.4988267968010272 1.4988267968010272 1.4988267968010272"
+                    rotation="-90 0 0"
+                    animation-mixer="loop: repeat"
+                    gltf-model="#animated-asset"
+                    class="clickable"
+                    gesture-handler
+                ></a-entity>
+            </a-marker>
+
+            <a-entity camera></a-entity>
+        </a-scene>
+
+        <script>
+    window.addEventListener('load', function() {
+        var startButton = document.getElementById('startButton');
+        var breathButton = document.getElementById('breathButton');
+        var scoreBoard = document.getElementById('scoreBoard');
+        var totalScoreSpan = document.getElementById('totalScore');
+        var fastScoreSpan = document.getElementById('fastScore');
+        var slowScoreSpan = document.getElementById('slowScore');
+        var totalTimeSpan = document.getElementById('totalTime');
+        var learnMoreButton = document.getElementById('learnMoreButton');
+        var meditationInfo = document.getElementById('meditationInfo');
+        var audio = new Audio('speaks/beginning.mp3'); // Beginning Audio Path
+        var bgm = new Audio('BGM.mp3'); // BGM Path
+        var readyButton = document.getElementById('readyButton');
+        var tutorialAudio = new Audio('speaks/tutorial.mp3'); // tutorial.mp3 音頻路徑
+        var listenAgainButton = document.getElementById('listenAgainButton');
+        var learnMoreButton = document.getElementById('learnMoreButton');
+        var meditationInfo = document.getElementById('meditationInfo');
+        var infoVisible = false;
+        var startTime, lastBreathTime, totalBreaths = 0;
+        var totalScore = 0, fastScore = 0, slowScore = 0;
+        var after5Audio = new Audio('speaks/after_5.mp3');
+        var after10Audio = new Audio('speaks/after_10.mp3');
+        var case1Audio = new Audio('speaks/case1.mp3');
+        var case2Audio = new Audio('speaks/case2.mp3');
+        var case3Audio = new Audio('speaks/case3.mp3');
+        var case4Audio = new Audio('speaks/case4.mp3');
+        var after50 = new Audio('speaks/after_50.mp3');
+        
+        startButton.addEventListener('click', function() {
+            document.getElementById('rules').style.display = 'block';
+            rules.style.display = 'block';
+            audio.volume = 1.0;
+            audio.play();
+            bgm.volume = 0.05; // 將音量設置為 50%
+            bgm.play();     
+            startButton.style.display = 'none'; // 隱藏 Start 按鈕
+        });
+        // 監聽語音播放完成事件
+        audio.addEventListener('ended', function() {
+            readyButton.style.display = 'block'; // 語音播完後顯示 Ready? 按鈕
+        });
+        readyButton.addEventListener('click', function() {
+            tutorialAudio.play();
+            readyButton.style.display = 'none'; // 隱藏 Ready? 按鈕
+            listenAgainButton.style.display = 'block'; // 顯示 Listen Again 按鈕
+            breathButton.style.display = 'block'; // 顯示 Breath 按鈕
+            startTime = lastBreathTime = Date.now();
+        });
+        
+        // 處理 Listen Again 按鈕的點擊事件
+        listenAgainButton.addEventListener('click', function() {
+            tutorialAudio.play();
+        });
+
+        breathButton.addEventListener('click', function() {
+            var currentTime = Date.now();
+            var timeSinceLastBreath = (currentTime - lastBreathTime) / 1000;
+            lastBreathTime = currentTime;
+            totalBreaths++;
+            listenAgainButton.style.display = 'none';
+            // 計分邏輯
+            if (timeSinceLastBreath >= 4 && timeSinceLastBreath <= 6)
+            {
+                totalScore += 2;
+            }
+            else if (timeSinceLastBreath >= 3 && timeSinceLastBreath <= 7)
+            {
+                totalScore += 1;
+            }
+            else
+            {
+                if (timeSinceLastBreath < 3) fastScore++;
+                if (timeSinceLastBreath > 7) slowScore++;
+            }
+
+            switch (totalBreaths) {
+                case 5:
+                    after5Audio.play();
+                    break;
+                case 10:
+                    after10Audio.play();
+                    break;
+                case 25:
+                    if (totalScore < 40 && Math.abs(fastScore - slowScore) > 2) {
+                        case1Audio.play();
+                    } else if (totalScore < 40 && fastScore > slowScore) {
+                        case2Audio.play();
+                    } else if (totalScore < 40) {
+                        case3Audio.play();
+                    } else {
+                        case4Audio.play();
+                    }
+                    break;
+            }
+
+            // 達到 50 次呼吸後顯示分數
+            if (totalBreaths === 50) {
+                after50.play();
+                var totalTime = (currentTime - startTime) / 1000;
+                breathButton.style.display = 'none';
+                scoreBoard.style.display = 'block';
+                totalScoreSpan.textContent = totalScore;
+                fastScoreSpan.textContent = fastScore;
+                slowScoreSpan.textContent = slowScore;
+                totalTimeSpan.textContent = totalTime.toFixed(2);
+                learnMoreButton.style.display = 'block'; // 顯示 Learn More 按鈕
+            }
+        });
+        
+        
+        // 處理 Learn More 按鈕的點擊事件
+        learnMoreButton.addEventListener('click', function(event) {
+            infoVisible = !infoVisible;
+            meditationInfo.style.display = infoVisible ? 'block' : 'none';
+            event.stopPropagation(); // 阻止事件冒泡
+        });
+        // 點擊頁面其他地方時隱藏信息框
+        document.addEventListener('click', function() {
+            if (infoVisible) {
+                meditationInfo.style.display = 'none';
+                infoVisible = false;
+            }
+        });
+    });
+</script>
+
+    </body>
+</html>
